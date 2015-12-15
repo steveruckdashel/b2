@@ -16,7 +16,7 @@ type Bucket struct {
 }
 
 type Buckets struct {
-	buckets []Bucket `json:"buckets"`
+	Buckets []Bucket `json:"buckets"`
 }
 
 func (b2 *B2) CreateBucket(bucketName, bucketType string) (*Bucket, error) {
