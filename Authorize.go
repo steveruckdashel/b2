@@ -15,8 +15,6 @@ type B2 struct {
 	ApiURL             string `json:"apiUrl"`
 	AuthorizationToken string `json:"authorizationToken"`
 	DownloadURL        string `json:"downloadUrl"`
-
-	client *http.Client
 }
 
 type ErrorJSON struct {
@@ -60,7 +58,6 @@ func Authorize(accountID, secretKey string) (*B2, error) {
 	if err := json.Unmarshal(data, &b2); err != nil {
 		return nil, err
 	}
-
-	b2.client = client
+	
 	return &b2, nil
 }

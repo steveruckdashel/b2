@@ -49,8 +49,13 @@ func (b2 *B2) UploadFile(bucket_id, file_name, content_type string, file_reader 
 	v := url.Values{}
 	v.Set("bucketId", bucket_id)
 	uri := b2.ApiURL + "/b2api/v1/b2_get_upload_url?" + v.Encode()
-
-	resp, err := b2.client.Get(uri)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", b2.AuthorizationToken)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -73,17 +78,16 @@ func (b2 *B2) UploadFile(bucket_id, file_name, content_type string, file_reader 
 		hsh <- fmt.Sprintf("%x", sha1.Sum(b))
 	}()
 
-	client := &http.Client{}
-	req, err := http.NewRequest("POST", fileUpload.UploadURL, bytes.NewReader(b))
+	up_req, err := http.NewRequest("POST", fileUpload.UploadURL, bytes.NewReader(b))
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", fileUpload.AuthorizationToken)
-	req.Header.Add("X-Bz-File-Name", file_name)
-	req.Header.Add("Content-Type", content_type)
-	req.Header.Add("X-Bz-Content-Sha1", <-hsh)
+	up_req.Header.Set("Authorization", fileUpload.AuthorizationToken)
+	up_req.Header.Add("X-Bz-File-Name", file_name)
+	up_req.Header.Add("Content-Type", content_type)
+	up_req.Header.Add("X-Bz-Content-Sha1", <-hsh)
 
-	up_resp, err := client.Do(req)
+	up_resp, err := client.Do(up_req)
 	if err != nil {
 		return nil, err
 	}
@@ -104,8 +108,13 @@ func (b2 *B2) GetFileInfo(file_id string) (*FileData, error) {
 	v := url.Values{}
 	v.Set("fileId", file_id)
 	uri := b2.ApiURL + "/b2api/v1/b2_get_file_info?" + v.Encode()
-
-	resp, err := b2.client.Get(uri)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", b2.AuthorizationToken)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -136,11 +145,16 @@ func (b2 *B2) ListFileNames(bucket_id, fileName string, maxFileCount int) ([]Sim
 			v.Set("maxFileCount", strconv.Itoa(maxFileCount))
 		}
 		uri := uri_base + v.Encode()
-
-		resp, err := b2.client.Get(uri)
-		if err != nil {
-			return arr, err
-		}
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", b2.AuthorizationToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
 		defer resp.Body.Close()
 		dec := json.NewDecoder(resp.Body)
 
@@ -179,11 +193,16 @@ func (b2 *B2) ListFileVersions(bucket_id, fileName, fileId string, maxFileCount 
 			v.Set("maxFileCount", strconv.Itoa(maxFileCount))
 		}
 		uri := uri_base + v.Encode()
-
-		resp, err := b2.client.Get(uri)
-		if err != nil {
-			return arr, err
-		}
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", b2.AuthorizationToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
 		defer resp.Body.Close()
 		dec := json.NewDecoder(resp.Body)
 
@@ -211,8 +230,13 @@ func (b2 *B2) HideFile(bucket_id, file_name string) (*SimpleFileData, error) {
 	v.Set("bucketId", bucket_id)
 	v.Set("fileName", file_name)
 	uri := b2.ApiURL + "/b2api/v1/b2_hide_file?" + v.Encode()
-
-	resp, err := b2.client.Get(uri)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", b2.AuthorizationToken)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -234,8 +258,13 @@ func (b2 *B2) DeleteFileVersion(file_name, file_id string) (*SimpleFileData, err
 	v.Set("fileId", file_id)
 	v.Set("fileName", file_name)
 	uri := b2.ApiURL + "/b2api/v1/b2_delete_file_version?" + v.Encode()
-
-	resp, err := b2.client.Get(uri)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Authorization", b2.AuthorizationToken)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -256,12 +285,16 @@ func (b2 *B2) DownloadFileByID(file_id string) (*FileData, io.Reader, error) {
 	v := url.Values{}
 	v.Set("fileId", file_id)
 	uri := b2.DownloadURL + "/b2api/v1/b2_download_file_by_id?" + v.Encode()
-
-	resp, err := b2.client.Get(uri)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-
+	req.Header.Add("Authorization", b2.AuthorizationToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, nil, err
+	}
 	fileData := &FileData{
 		FileID:      strings.Join(resp.Header["X-Bz-File-Id"], ","),
 		FileName:    strings.Join(resp.Header["X-Bz-File-Name"], ","),
@@ -291,12 +324,16 @@ func (b2 *B2) DownloadFileByID(file_id string) (*FileData, io.Reader, error) {
 
 func (b2 *B2) DownloadFileByName(bucket_name, file_name string) (*FileData, io.Reader, error) {
 	uri := b2.DownloadURL + fmt.Sprintf("/file/%s/%s", bucket_name, file_name)
-
-	resp, err := b2.client.Get(uri)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		return nil, nil, err
 	}
-
+	req.Header.Add("Authorization", b2.AuthorizationToken)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, nil, err
+	}
 	fileData := &FileData{
 		FileID:      strings.Join(resp.Header["X-Bz-File-Id"], ","),
 		FileName:    strings.Join(resp.Header["X-Bz-File-Name"], ","),
